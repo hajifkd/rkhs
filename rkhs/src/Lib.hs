@@ -22,12 +22,19 @@ integrate t0 x0s next = res
   where
     res = (t0, x0s):(map next res)
 
-rk4 :: Fractional a => a -> ((a, [a]) -> [a]) -> (a, [a]) -> (a, [a])
-rk4 dt dxdt (t, xs) = (t + dt, xnews)
+explicitNext :: Fractional a => [[a]] -> [a] -> [a] -> a -> ((a, [a]) -> [a]) -> (a, [a]) -> (a, [a])
+explicitNext ass bs cs dt dxdt (t, xs) = (t + dt, xnews)
   where
-    cs    = [0, 1 / 2, 1 / 2, 1]
     ts    = map ((t +) . (dt *)) cs
-    ass   = [[], [1 / 2], [0, 1 / 2], [0, 0, 1]]
     kss   = map dxdt $ zip ts $ map ((xs ~+~) . (dt ~*~) . sumV . zipWith (flip (~*~)) kss) ass
-    bs    = [1 / 6, 1 / 3, 1 / 3, 1 / 6]
     xnews = xs ~+~ dt ~*~ (sumV . zipWith (~*~) bs) kss
+
+rk4 :: Fractional a => a -> ((a, [a]) -> [a]) -> (a, [a]) -> (a, [a])
+rk4 = explicitNext ass bs cs
+  where
+    ass   = [ [                 ],
+              [1 / 2            ],
+              [0,     1 / 2     ],
+              [0,     0,      1 ]]
+    bs    = [1 / 6, 1 / 3,    1 / 3,      1 / 6 ]
+    cs    = [0,     1 / 2,    1 / 2,      1     ]
